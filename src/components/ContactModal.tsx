@@ -20,37 +20,58 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    brandName: '',
-    projectScope: 'Complete Brand Website',
-    budget: '$5,000 – $8,000',
-    timeline: 'Within 4-6 weeks',
+    phone: '',
+    instagram: '',
+    github: '',
+    projectScope: 'Business Website',
     message: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (initialBrief) {
       setFormData((prev) => ({
         ...prev,
-        projectScope: initialBrief.scope,
-        timeline: initialBrief.timeline,
-        message: `Estimated investment calculated: ${initialBrief.estimatedPrice}. Desired aesthetic vibe: ${initialBrief.aesthetic}.`,
+        projectScope: ['Business Website', 'Portfolio Website', 'E-commerce Website', 'Booking Website', 'Landing Page', 'Website Redesign', 'Other / Not Sure'].includes(initialBrief.scope)
+          ? initialBrief.scope
+          : 'Other / Not Sure',
+        message: `Selected service: ${initialBrief.scope}. Estimated investment: ${initialBrief.estimatedPrice}. Desired aesthetic: ${initialBrief.aesthetic}. Target timeline: ${initialBrief.timeline}.`,
       }));
     }
   }, [initialBrief]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate realistic swift submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setErrorMessage('');
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram: formData.instagram,
+          github: formData.github,
+          websiteType: formData.projectScope,
+          message: formData.message,
+          company_website: (e.currentTarget.elements.namedItem('company_website') as HTMLInputElement | null)?.value || '',
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Your note could not be sent. Please try again.');
       setSubmitted(true);
-    }, 600);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -156,85 +177,49 @@ export const ContactModal: React.FC<ContactModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">
-                    Brand / Company / Instagram
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.brandName}
-                    onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-                    placeholder="e.g. Maison Aveline (@maisonaveline)"
-                    className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors"
-                  />
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">Phone / WhatsApp (optional)</label>
+                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 555 123 4567" autoComplete="tel" className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">
-                    Project Scope
-                  </label>
-                  <select
-                    value={formData.projectScope}
-                    onChange={(e) => setFormData({ ...formData, projectScope: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors cursor-pointer"
-                  >
-                    <option value="Landing Page">High-Converting Landing Page</option>
-                    <option value="Complete Brand Website">Complete Brand Website (5-8 Pages)</option>
-                    <option value="Shopify E-Commerce">Shopify / Boutique E-Commerce</option>
-                    <option value="Website Redesign">Editorial Website Redesign</option>
-                    <option value="AI-Powered Micro-Tool">AI-Powered Website / Micro-Tool</option>
-                    <option value="Art Direction Retainer">Monthly Creative Direction Retainer</option>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">What kind of website do you need? *</label>
+                  <select required value={formData.projectScope} onChange={(e) => setFormData({ ...formData, projectScope: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors cursor-pointer">
+                    <option value="Business Website">Business / Service Website</option>
+                    <option value="Portfolio Website">Portfolio Website</option>
+                    <option value="E-commerce Website">E-commerce Website</option>
+                    <option value="Booking Website">Booking / Appointment Website</option>
+                    <option value="Landing Page">Landing Page</option>
+                    <option value="Website Redesign">Website Redesign</option>
+                    <option value="Other / Not Sure">Other / Not Sure Yet</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">
-                    Estimated Budget Range
-                  </label>
-                  <select
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors cursor-pointer"
-                  >
-                    <option value="$3,000 – $5,000">$3,000 – $5,000</option>
-                    <option value="$5,000 – $8,000">$5,000 – $8,000</option>
-                    <option value="$8,000 – $15,000">$8,000 – $15,000</option>
-                    <option value="$15,000+">$15,000+ (Multi-phase flagship)</option>
-                  </select>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">Instagram (optional)</label>
+                  <input type="text" value={formData.instagram} onChange={(e) => setFormData({ ...formData, instagram: e.target.value })} placeholder="@yourbrand" autoComplete="off" className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors" />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">
-                    Target Launch
-                  </label>
-                  <select
-                    value={formData.timeline}
-                    onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors cursor-pointer"
-                  >
-                    <option value="Within 2-3 weeks (Express)">Within 2-3 weeks (Express)</option>
-                    <option value="Within 4-6 weeks">Within 4-6 weeks (Standard)</option>
-                    <option value="Next Quarter">Next Quarter</option>
-                    <option value="Flexible">Flexible / Ongoing</option>
-                  </select>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">GitHub (optional)</label>
+                  <input type="url" value={formData.github} onChange={(e) => setFormData({ ...formData, github: e.target.value })} placeholder="https://github.com/yourname" className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#44373B] mb-1.5">
-                  Project Details & Dream Aesthetic *
+                  Project Details (optional)
                 </label>
                 <textarea
                   rows={4}
-                  required
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Tell me about your brand, what makes you unique, and any dream aesthetic references (Pinterest boards, favorite sites, etc.)..."
+                  placeholder="Anything else we should know? Share your business, goals, or examples you love..."
                   className="w-full px-4 py-3 rounded-xl border border-[#F9D8DE] bg-[#FFF9FA] focus:bg-[#FFFDFB] focus:border-[#C47B89] outline-none text-sm transition-colors resize-none"
                 />
               </div>
 
+              <div aria-hidden="true" className="hidden"><label>Leave this field empty<input name="company_website" tabIndex={-1} autoComplete="off" /></label></div>
+              {errorMessage && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>}
               <div className="pt-2">
                 <button
                   type="submit"
