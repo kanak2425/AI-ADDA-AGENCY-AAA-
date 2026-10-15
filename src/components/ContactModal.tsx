@@ -35,8 +35,10 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     if (initialBrief) {
       setFormData((prev) => ({
         ...prev,
-        projectScope: initialBrief.scope,
-        message: `Estimated investment calculated: ${initialBrief.estimatedPrice}. Desired aesthetic vibe: ${initialBrief.aesthetic}. Target timeline: ${initialBrief.timeline}.`,
+        projectScope: ['Business Website', 'Portfolio Website', 'E-commerce Website', 'Booking Website', 'Landing Page', 'Website Redesign', 'Other / Not Sure'].includes(initialBrief.scope)
+          ? initialBrief.scope
+          : 'Other / Not Sure',
+        message: `Selected service: ${initialBrief.scope}. Estimated investment: ${initialBrief.estimatedPrice}. Desired aesthetic: ${initialBrief.aesthetic}. Target timeline: ${initialBrief.timeline}.`,
       }));
     }
   }, [initialBrief]);
